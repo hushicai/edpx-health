@@ -4,4 +4,9 @@
  */
 
 <?php
+require_once('${mockCommonPath}/header.php');
+
+$smarty->template_dir = views_dir . "${moduleName}";
+
+$smarty->display('${tplPath}');
 

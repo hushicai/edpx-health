@@ -5,7 +5,7 @@
     <title>百度健康</title>
     {include file="${viewCommonPath}/conf.tpl" module="${moduleName}"}
     <link href="{$common_host}/css/main.less" rel="stylesheet" />
-    <link href="{$module_host}/css/${lessPath}" rel="stylesheet" />
+    <link href="{$module_host}/css/${pageName}.less" rel="stylesheet" />
     <link href="http://www.baidu.com/favicon.ico" rel="shortcut icon" />
 </head>
 
@@ -27,8 +27,12 @@
     {include file="${viewCommonPath}/script.tpl"}
     <script type="text/javascript">
         define('global/pageData', {
-            // global data  
+            // js中需要用到的数据写在这，请不要定义全局变量
         });
+
+        require(['${moduleName}/${pageName}', function(page) {
+            page.init();
+        }]);
     </script>
 </body>
 </html>

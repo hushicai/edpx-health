@@ -12,11 +12,20 @@ var path = require('path');
  * @inner
  * @param {string} file 文件
  */
-function assetDir(file) {
+function assertDir(file) {
     var dir = path.dirname(file);
     if (!fs.existsSync(dir)) {
         require('mkdirp').sync(dir);
     }
+}
+
+/**
+ * 生成文件
+ * 
+ * @inner
+ */
+function generateFile(name, file, data) {
+    return require('../../index').scaffold.create(name, file, data);
 }
 
 /**
@@ -53,37 +62,41 @@ function genModule(moduleName, projectInfo) {
  * @inner
  */
 function genPage(moduleName, pageName, projectInfo) {
-    var health = require('../../index');
-    var scaffold = health.scaffold;
-
     var projectRoot = projectInfo.dir;
 
-    var mockFile = path.resolve(projectRoot, 'mock', moduleName, pageName) + '.php';
-    assetDir(mockFile);
-    scaffold.generate('mock', mockFile);
-
+    // 生成less文件
     var lessFile = path.resolve(projectRoot, 'src', moduleName, 'css', pageName) + '.less';
-    assetDir(lessFile);
-    scaffold.generate('less', lessFile);
+    assertDir(lessFile);
+    generateFile('less', lessFile);
 
-    // js默认以main为入口
+    // 生成js文件
     var jsFile = path.resolve(projectRoot, 'src', moduleName, pageName) + '.js';
-    assetDir(jsFile);
-    scaffold.generate('js', jsFile);
+    assertDir(jsFile);
+    generateFile('js', jsFile);
 
+    // 生成tpl文件
     var tplFile = path.resolve(projectRoot, 'views', moduleName, pageName) + '.tpl';
-    var viewCommonPath = path.resolve(projectRoot, 'views', 'common');
-    assetDir(tplFile);
-    scaffold.generate('view', tplFile, {
+    assertDir(tplFile);
+    generateFile('view', tplFile, {
         // 模块名
         moduleName: moduleName,
-        // less文件相对于css目录的路径
-        lessPath: pageName + '.less',
-        viewCommonPath: path.relative(tplFile, viewCommonPath),
+        pageName: pageName,
+        // common目录相对于tplFile的路径
+        viewCommonPath: path.relative(path.dirname(tplFile), path.resolve(projectRoot, 'views', 'common')),
         // log cat 标志
         logCat: moduleName + pageName.replace(/(^|\/)([a-z])/gi, function($0, $1, $2) {
             return $2.toUpperCase();
         })
+    });
+
+    // 生成mock文件
+    var mockFile = path.resolve(projectRoot, 'mock', moduleName, pageName) + '.php';
+    assertDir(mockFile);
+    generateFile('mock', mockFile, {
+        moduleName: moduleName,
+        // mockFile相对于common目录的路径
+        mockCommonPath: path.relative(path.dirname(mockFile), path.resolve(projectRoot, 'mock', 'common')),
+        tplPath: path.relative(path.resolve(projectRoot, 'views', moduleName), tplFile)
     });
 }
 

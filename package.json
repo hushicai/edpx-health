@@ -17,6 +17,10 @@
     "edp-config": "^1.0.2",
     "edp-project": "^0.6.1",
     "mkdirp": "~0.5.0",
-    "etpl": "^2.1.0-rc"
+    "etpl": "^2.1.0-rc",
+    "tar": "^0.1.20",
+    "edp-webserver": "^1.0.15",
+    "glob": "^4.0.5",
+    "cheerio": "^0.17.0"
   }
 }

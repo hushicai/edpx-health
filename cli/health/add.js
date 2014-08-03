@@ -6,18 +6,9 @@
 var fs = require('fs');
 var path = require('path');
 
-/**
- * 确保文件所在的文件夹存在
- *
- * @inner
- * @param {string} file 文件
- */
-function assertDir(file) {
-    var dir = path.dirname(file);
-    if (!fs.existsSync(dir)) {
-        require('mkdirp').sync(dir);
-    }
-}
+var health = require('../../index');
+
+var assertDir = health.assertDir;
 
 /**
  * 生成文件
@@ -25,7 +16,7 @@ function assertDir(file) {
  * @inner
  */
 function generateFile(name, file, data) {
-    return require('../../index').scaffold.create(name, file, data);
+    return health.scaffold.create(name, file, data);
 }
 
 /**

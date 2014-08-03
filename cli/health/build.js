@@ -39,6 +39,26 @@ function mergeConf(source, data) {
     };
 }
 
+var FileFormat = {
+    DOS: '\r\n',
+    UNIX: '\n'
+}
+
+/**
+ * 检测文件格式
+ * 
+ * @public
+ * @param {string} content 文件内容
+ * @return {string} 
+ */
+function checkFileFormat(content) {
+    if (content.search(/\r\n/)) {
+        return FileFormat.DOS;
+    }
+
+    return FileFormat.UNIX;
+};
+
 /**
  * 检测文件格式
  * 
@@ -47,12 +67,18 @@ function mergeConf(source, data) {
  */
 function assertFileFormat(file, content) {
     var source = fs.readFileSync(file, 'utf-8');
-    if (source.search(/\r\n/)) {
-        content = content.replace(/\n/g, '\r\n');
+
+    var sff = checkFileFormat(source);
+    var cff = checkFileFormat(content);
+
+    // 如果格式不一样，则转换目标内容的格式
+    if (cff !== sff) {
+        content = content.replace(new RegExp(cff, 'g'), sff);
     }
 
     return content;
 }
+
 
 /**
  * 分析文件内容，提取所有less入口文件、js入口文件

@@ -9,35 +9,7 @@
 var fs = require('fs');
 var path = require('path');
 
-/**
- * 合并配置
- * 将data中不存在于source中并且实际存在的文件添加到source中
- * 
- * @inner
- * @param {Array.<string>} source 原配置
- * @param {Array.<string>} data 新配置
- * @param {Object} projectInfo 项目配置
- * @return {Array.<string>} 
- */
-function mergeConf(source, data) {
-    var sourceHash = {};
-    var isChanged = false;
-
-    source.forEach(function(file) {
-        sourceHash[file] = 1;
-    });
-    data.forEach(function(file) {
-        if (!sourceHash[file]) {
-            source.push(file);
-            isChanged = true;
-        }
-    });
-
-    return {
-        data: source,
-        isChanged: isChanged
-    };
-}
+var edp = require('edp-core');
 
 var FileFormat = {
     DOS: '\r\n',
@@ -123,28 +95,51 @@ function analyse(files, projectInfo) {
         });
     });
 
-    lessFilesHash = null;
-    jsFilesHash = null;
+    lessFilesHash = {};
+    jsFilesHash = {};
 
-    // 写入文件
+    // 更新less.conf
+    var isLessChanged = false;
     var lessConf = path.resolve(projectRoot, 'less.conf');
     var sourceLessFiles = require(lessConf);
-    var cssConf = mergeConf(sourceLessFiles, lessFiles);
-    if (cssConf.isChanged) {
+    // 建立index
+    sourceLessFiles.forEach(function(file) {
+        lessFilesHash[file] = 1;
+    });
+    // 把新增的less文件添加进来
+    lessFiles.forEach(function(file) {
+        if (!lessFilesHash[file]) {
+            isLessChanged = true;
+            sourceLessFiles.push(file);
+        }
+    });
+    if (isLessChanged) {
         fs.writeFileSync(
             lessConf,
-            'module.exports = ' + assertFileFormat(lessConf, JSON.stringify(cssConf.data, null, 4)) + ';',
+            'module.exports = ' + assertFileFormat(lessConf, JSON.stringify(sourceLessFiles, null, 4)) + ';',
             'utf-8'
         );
     }
 
+    // 更新module.conf
+    var isJsChanged = false;
     var moduleConf = path.resolve(projectRoot, 'module.conf');
     var moduleConfig = require('edp-project').module.getConfig(projectInfo);
     var sourceJsFiles = Object.keys(moduleConfig.combine);
-    var jsConf = mergeConf(sourceJsFiles, jsFiles);
-    if (jsConf.isChanged) {
+    sourceJsFiles.forEach(function(file) {
+        jsFilesHash[file] = 1;
+    });
+    // 将新增的js文件添加进来
+    jsFiles.forEach(function(file) {
+        var moduleFile = edp.amd.getModuleFile(file, moduleConf, moduleConfig);
+        if (!jsFilesHash[file] && fs.existsSync(moduleFile)) {
+            isJsChanged = true;
+            sourceJsFiles.push(file);
+        }
+    });
+    if (isJsChanged) {
         var combine = {};
-        jsConf.data.forEach(function(item) {
+        sourceJsFiles.forEach(function(item) {
             combine[item] = 1;
         });
         moduleConfig.combine = combine;

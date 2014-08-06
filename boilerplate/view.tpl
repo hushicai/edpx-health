@@ -1,3 +1,4 @@
+{strip}
 <!DOCTYPE html>
 <html>
 <head>
@@ -11,21 +12,25 @@
 
 <body>
     {include file="${viewCommonPath}/header.tpl"}
-    {strip}
+
     <div class="main">
         <div class="container">
         </div>
     </div>
-    {/strip}
-    <div id="footer-nav"></div>
+
+    {include file="${viewCommonPath}/footer.tpl"}
+
     {include file="${viewCommonPath}/widgets.tpl"}
-    <script type="text/javascript">
+
+    <script>
         var LOG_DATA = {
             cat: '${logCat}'
         };
     </script>
+
     {include file="${viewCommonPath}/script.tpl"}
-    <script type="text/javascript">
+
+    <script>
         define('global/pageData', {
             // js中需要用到的数据写在这，请不要定义全局变量
         });
@@ -36,3 +41,4 @@
     </script>
 </body>
 </html>
+{/strip}

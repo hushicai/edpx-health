@@ -12,16 +12,17 @@ var http = require('http');
 var path = require('path');
 var zlib = require('zlib');
 
+var edp = require('edp-core');
+
 /**
  * 下载smarty
  * 
  * @private
  */
 function downloadSmarty(projectInfo) {
-    var edp = require('edp-core');
-    var smartyPath = path.resolve(projectInfo.dir, 'mock', 'smarty');
+    var smartyLibsPath = path.resolve(projectInfo.dir, 'mock', 'libs');
 
-    if (fs.existsSync(smartyPath)) {
+    if (fs.existsSync(smartyLibsPath)) {
         return;
     }
 
@@ -50,6 +51,7 @@ function downloadSmarty(projectInfo) {
         edp.log.info('解压smarty...');
 
         var tar = require('tar');
+        var smartyPath = path.resolve(projectInfo.dir, 'mock', 'smarty');
 
         fs.createReadStream(smartyTarPath)
             .pipe(zlib.createGunzip())
@@ -59,7 +61,12 @@ function downloadSmarty(projectInfo) {
             }))
             .on('end', function() {
                 fs.unlinkSync(smartyTarPath);
-                edp.log.info('解压smarty到`' + smartyPath + '`中');
+                require('wrench').copyDirSyncRecursive(
+                    path.resolve(smartyPath, 'libs'),
+                    smartyLibsPath
+                );
+                edp.util.rmdir(smartyPath);
+                edp.log.info('成功安装smarty至`' + smartyLibsPath + '`');
             });
 
         return;
@@ -69,20 +76,62 @@ function downloadSmarty(projectInfo) {
 var cli = {};
 
 cli.main = function() {
-    var project = require('edp-project');
-
     try {
-        var projectInfo = project.getInfo(process.cwd());
-        project.dir.create('mock', projectInfo);
-        project.dir.create('views', projectInfo);
+        require('edp-project/cli/project/init').cli.main();
+    }
+    catch(ex) {
+        return;
+    }
 
-        downloadSmarty(projectInfo);
-    }
-    catch (ex) {
-        var edp = require('edp-core');
-        edp.log.error('[edp health init] ' + ex.message);
-        throw ex;
-    }
+    var project = require('edp-project');
+    var projectInfo = project.getInfo(process.cwd());
+
+    project.dir.create('mock/common', projectInfo);
+    project.dir.create('views/common', projectInfo);
+    project.dir.create('src/common/css', projectInfo);
+    project.dir.create('src/common/img', projectInfo);
+
+    var projectRoot = projectInfo.dir;
+    var scaffold = require('../../index').scaffold;
+
+    scaffold.generate(
+        'webserver-config',
+        path.resolve(projectRoot, 'edp-webserver-config.js')
+    );
+    scaffold.generate(
+        'bowerrc',
+        path.resolve(projectRoot, '.bowerrc')
+    );
+    scaffold.create(
+        'mock.header',
+        path.resolve(projectRoot, 'mock/common/header.php')
+    );
+    scaffold.create(
+        'less.common',
+        path.resolve(projectRoot, 'src/common/css/main.less')
+    );
+    scaffold.create(
+        'view.conf',
+        path.resolve(projectRoot, 'views/common/conf.tpl')
+    );
+    scaffold.create(
+        'view.script',
+        path.resolve(projectRoot, 'views/common/script.tpl')
+    );
+    scaffold.create(
+        'view.header',
+        path.resolve(projectRoot, 'views/common/header.tpl')
+    );
+    scaffold.create(
+        'view.widgets',
+        path.resolve(projectRoot, 'views/common/widgets.tpl')
+    );
+    scaffold.create(
+        'view.footer',
+        path.resolve(projectRoot, 'views/common/footer.tpl')
+    );
+
+    downloadSmarty(projectInfo);
 };
 
 exports.cli = cli;

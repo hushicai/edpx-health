@@ -32,7 +32,7 @@ function checkFileFormat(content) {
 };
 
 /**
- * 检测文件格式
+ * 保证输入与输出文件格式一致
  * 
  * @inner
  * @return {string} 

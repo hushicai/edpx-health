@@ -5,7 +5,6 @@
 
 // * 自动查找所有入口less文件，并更新到less.conf中
 // * 自动查找所有入口js文件，并更新到module.conf中
-// 
 var fs = require('fs');
 var path = require('path');
 
@@ -14,14 +13,14 @@ var edp = require('edp-core');
 var FileFormat = {
     DOS: '\r\n',
     UNIX: '\n'
-}
+};
 
 /**
  * 检测文件格式
- * 
+ *
  * @public
  * @param {string} content 文件内容
- * @return {string} 
+ * @return {string} fileformat
  */
 function checkFileFormat(content) {
     if (content.search(/\r\n/)) {
@@ -29,13 +28,13 @@ function checkFileFormat(content) {
     }
 
     return FileFormat.UNIX;
-};
+}
 
 /**
  * 保证输入与输出文件格式一致
- * 
+ *
  * @inner
- * @return {string} 
+ * @return {string} content
  */
 function assertFileFormat(file, content) {
     var source = fs.readFileSync(file, 'utf-8');
@@ -74,18 +73,24 @@ function analyse(files, projectInfo) {
 
         var moduleName = path.dirname(file).split(path.sep)[0];
 
-        content.replace(/\{\$(common|module)_host\}(.+?\.less)/g, function($0, $1, $2) {
-            var lessFile = ($1 == 'common' ? 'common' : moduleName) + $2;
+        content.replace(/\{\$(common|module)_host\}(.+?\.(less|css))/g, function ($0, $1, $2) {
+            $2 = $2.replace(/\.css$/g, '.less');
+            var lessFile = ($1 === 'common' ? 'common' : moduleName) + $2;
             if (lessFile && !lessFilesHash[lessFile]) {
-                lessFiles.push('src/' + lessFile);
                 lessFilesHash[lessFile] = 1;
+
+                // 如果文件确实存在，再添加到处理列表中
+                var temp = 'src/' + lessFile;
+                if (fs.existsSync(temp)) {
+                    lessFiles.push(temp);
+                }
             }
         });
 
-        content.replace(/require\(\s*\[(.+?)\]/, function($0, $1) {
+        content.replace(/require\(\s*\[(.+?)\]/g, function ($0, $1) {
             var jsFile = $1 ? $1.split(',') : [];
 
-            jsFile.forEach(function(item) {
+            jsFile.forEach(function (item) {
                 item = item.split(/['"]/)[1];
                 if (!jsFilesHash[item]) {
                     jsFiles.push(item);
@@ -103,11 +108,11 @@ function analyse(files, projectInfo) {
     var lessConf = path.resolve(projectRoot, 'less.conf');
     var sourceLessFiles = require(lessConf);
     // 建立index
-    sourceLessFiles.forEach(function(file) {
+    sourceLessFiles.forEach(function (file) {
         lessFilesHash[file] = 1;
     });
     // 把新增的less文件添加进来
-    lessFiles.forEach(function(file) {
+    lessFiles.forEach(function (file) {
         if (!lessFilesHash[file]) {
             isLessChanged = true;
             sourceLessFiles.push(file);

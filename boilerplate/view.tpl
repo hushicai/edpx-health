@@ -20,8 +20,6 @@
 
     {include file="${viewCommonPath}/footer.tpl"}
 
-    {include file="${viewCommonPath}/widgets.tpl"}
-
     <script>
         var LOG_DATA = {
             cat: '${logCat}'
@@ -31,10 +29,6 @@
     {include file="${viewCommonPath}/script.tpl"}
 
     <script>
-        define('global/pageData', {
-            // js中需要用到的数据写在这，请不要定义全局变量
-        });
-
         require(['${moduleName}/${pageName}'], function(page) {
             page.init();
         });
